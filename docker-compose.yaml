@@ -12,11 +12,6 @@ services:
       - "5432:5432"
     volumes:
       - pgdata-auth:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U auth_user -d auth_db" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     restart: unless-stopped
     networks:
       - micro-network
@@ -32,11 +27,6 @@ services:
       - "5433:5432"
     volumes:
       - pgdata-client:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U client_user -d client_db" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     restart: unless-stopped
     networks:
       - micro-network
@@ -52,11 +42,6 @@ services:
       - "5434:5432"
     volumes:
       - pgdata-order:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U order_user -d order_db" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     restart: unless-stopped
     networks:
       - micro-network
@@ -87,11 +72,91 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
       KAFKA_LOG_DIRS: ${KAFKA_LOG_DIRS}
       CLUSTER_ID: ${CLUSTER_ID}
+    volumes:
+      - kafka:/kafka/logs
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: auth-service
+    depends_on:
+      postgres-auth:
+        condition: service_started
+      kafka:
+        condition: service_started
+      redis:
+        condition: service_started
+    environment:
+      REDIS_HOST: redis
+      SPRING_DATASOURCE_URL: ${DB_URL_AUTH}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8081:8081"
+    networks:
+      - micro-network
+    restart: unless-stopped
+
+  order-service:
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    container_name: order-service
+    depends_on:
+      postgres-order:
+        condition: service_started
+      kafka:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: ${DB_URL_ORDER}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8084:8084"
+    networks:
+      - micro-network
+    restart: unless-stopped
+
+  customer-service:
+    build:
+      context: .
+      dockerfile: customer-service/Dockerfile
+    container_name: customer-service
+    depends_on:
+      postgres-client:
+        condition: service_started
+      kafka:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: ${DB_URL_CLIENT}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8083:8083"
+    networks:
+      - micro-network
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8082:8082"
+    networks:
+      - micro-network
+    restart: unless-stopped
 
 volumes:
   pgdata-auth:
   pgdata-client:
   pgdata-order:
+  kafka:
 
 networks:
   micro-network:

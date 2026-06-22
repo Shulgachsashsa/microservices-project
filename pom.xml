@@ -19,13 +19,14 @@
         <module>api-gateway</module>
         <module>order-service</module>
         <module>customer-service</module>
+        <module>common</module>
     </modules>
 
     <properties>
         <java.version>21</java.version>
-        <spring-cloud.version>2024.0.0</spring-cloud.version> <mapstruct.version>1.6.3</mapstruct.version>
+        <spring-cloud.version>2025.0.0</spring-cloud.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
         <jjwt.version>0.12.6</jjwt.version>
-        <spring-cloud.version>2024.0.0</spring-cloud.version>
     </properties>
 
     <dependencyManagement>
