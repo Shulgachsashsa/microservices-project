@@ -1,6 +1,5 @@
 package demo.authservice.entity;
 
-
 import demo.authservice.entity.roles.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -42,7 +41,7 @@ public class UserEntity implements UserDetails {
 
     @Override
     public String getUsername() {
-        return "";
+        return email;
     }
 
     @Override
