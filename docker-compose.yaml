@@ -16,17 +16,32 @@ services:
     networks:
       - micro-network
 
-  postgres-client:
+  postgres-menu:
     image: postgres:17
-    container_name: postgres-client
+    container_name: postgres-menu
     environment:
-      POSTGRES_DB: ${DB_NAME_CLIENT}
+      POSTGRES_DB: ${DB_NAME_MENU}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata-menu:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - micro-network
+
+  postgres-kitchen:
+    image: postgres:17
+    container_name: postgres-kitchen
+    environment:
+      POSTGRES_DB: ${DB_NAME_KITCHEN}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
-      - pgdata-client:/var/lib/postgresql/data
+      - pgdata-kitchen:/var/lib/postgresql/data
     restart: unless-stopped
     networks:
       - micro-network
@@ -88,7 +103,11 @@ services:
       redis:
         condition: service_started
     environment:
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
       REDIS_HOST: ${REDIS_HOST}
+      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX}
+      REDIS_TTL_MINUTES: ${REDIS_TTL_MINUTES}
+      REDIS_MAX_ATTEMPTS: ${REDIS_MAX_ATTEMPTS}
       SPRING_DATASOURCE_URL: ${DB_URL_AUTH}
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
@@ -96,6 +115,8 @@ services:
       JWT_TTL_KEY: ${JWT_TTL_KEY}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_REFRESH_TTL_KEY: ${JWT_REFRESH_TTL_KEY}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
     ports:
       - "8081:8081"
     networks:
@@ -113,6 +134,7 @@ services:
       kafka:
         condition: service_started
     environment:
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
       SPRING_DATASOURCE_URL: ${DB_URL_ORDER}
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
@@ -123,18 +145,19 @@ services:
       - micro-network
     restart: unless-stopped
 
-  customer-service:
+  menu-service:
     build:
       context: .
-      dockerfile: customer-service/Dockerfile
-    container_name: customer-service
+      dockerfile: menu-service/Dockerfile
+    container_name: menu-service
     depends_on:
-      postgres-client:
+      postgres-menu:
         condition: service_started
       kafka:
         condition: service_started
     environment:
-      SPRING_DATASOURCE_URL: ${DB_URL_CLIENT}
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      SPRING_DATASOURCE_URL: ${DB_URL_MENU}
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
@@ -149,16 +172,52 @@ services:
       context: .
       dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
+    environment:
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
     ports:
       - "8082:8082"
     networks:
       - micro-network
     restart: unless-stopped
 
+  kitchen-service:
+    build:
+      context: .
+      dockerfile: kitchen-service/Dockerfile
+    container_name: kitchen-service
+    depends_on:
+      postgres-kitchen:
+        condition: service_started
+      kafka:
+        condition: service_started
+    environment:
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      SPRING_DATASOURCE_URL: ${DB_URL_KITCHEN}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+    ports:
+      - "8085:8085"
+    networks:
+      - micro-network
+    restart: unless-stopped
+
+  discovery-service:
+    build:
+      context: .
+      dockerfile: discovery-service/Dockerfile
+    ports:
+      - "8761:8761"
+    networks:
+      - micro-network
+    restart: unless-stopped
+
 volumes:
   pgdata-auth:
-  pgdata-client:
+  pgdata-menu:
   pgdata-order:
+  pgdata-kitchen:
   kafka:
 
 networks:

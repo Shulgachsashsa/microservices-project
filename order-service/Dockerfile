@@ -8,11 +8,11 @@ RUN mvn clean package -pl order-service -am -DskipTests
 FROM eclipse-temurin:21-jre-alpine
 RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser
 
-WORKDIR /app
+WORKDIR /order-service
 
-COPY --from=builder /build/order-service/target/*.jar app.jar
+COPY --from=builder /build/order-service/target/*.jar order-service.jar
 
 USER appuser
 EXPOSE 8084
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "order-service.jar"]
