@@ -8,11 +8,11 @@ RUN mvn clean package -pl auth-service -am -DskipTests
 FROM eclipse-temurin:21-jre-alpine
 RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser
 
-WORKDIR /app
+WORKDIR /auth-service
 
-COPY --from=builder /build/auth-service/target/*.jar app.jar
+COPY --from=builder /build/auth-service/target/*.jar auth-service.jar
 
 USER appuser
 EXPOSE 8081
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "auth-service.jar"]

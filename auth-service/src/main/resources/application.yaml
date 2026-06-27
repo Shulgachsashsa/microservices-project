@@ -28,3 +28,41 @@ spring:
   liquibase:
     enabled: true
     change-log: classpath:/db/changelog/db.changelog-master.xml
+
+  token:
+    signing:
+      key: ${JWT_SECRET_KEY}
+      ttl: ${JWT_TTL_KEY}
+      refresh: ${JWT_REFRESH_TTL_KEY}
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  cache:
+    redis:
+      key-prefix: ${REDIS_KEY_PREFIX}
+      time-to-live: ${REDIS_TTL_MINUTES}
+      max-attempts: ${REDIS_MAX_ATTEMPTS}
+
+server:
+  port: 8081
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL}
+    fetch-registry: true
+    register-with-eureka: true

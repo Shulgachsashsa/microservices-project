@@ -1,3 +1,26 @@
 spring:
   application:
     name: api-gateway
+
+  token:
+    signing:
+      key: ${JWT_SECRET_KEY}
+
+  cloud:
+    gateway:
+      routes:
+      - id: auth-service-route
+        uri: lb://auth-service
+        predicates:
+        - Path=/api/v1/auth/**
+
+eureka:
+  client:
+    fetch-registry: true
+    register-with-eureka: false
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL}
+
+server:
+  port: 8082
+  forward-headers-strategy: framework
